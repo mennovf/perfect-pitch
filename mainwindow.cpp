@@ -3,6 +3,7 @@
 #include <QPushButton>
 #include <QRandomGenerator>
 #include <QDebug>
+#include <QTimer>
 #include "keyboard.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -29,6 +30,15 @@ MainWindow::MainWindow(QWidget *parent)
     this->playRandomNote();
 
     connect(this->ui->volumeSlider, &QSlider::valueChanged, this, &MainWindow::volumeChanged);
+
+    this->noise_timer.setInterval(500);
+    this->noise_timer.setSingleShot(false);
+    QObject::connect(&this->noise_timer, &QTimer::timeout, this, [this](){
+        if (--this->noise_count <= 0) {
+            this->noise_timer.stop();
+        }
+        this->playRandomNote();
+    });
 }
 
 void MainWindow::volumeChanged(int v) {
@@ -42,6 +52,17 @@ MainWindow::~MainWindow()
     this->synthThread.exit();
     this->synthThread.wait();
     delete ui;
+}
+
+void MainWindow::changeNote() {
+    if (this->ui->noise->isChecked()) {
+        this->noise_count = 10;
+        this->noise_timer.setInterval(500);
+    } else {
+        this->noise_count = 1;
+        this->noise_timer.setInterval(1);
+    }
+    this->noise_timer.start();
 }
 
 void MainWindow::playRandomNote() {
@@ -58,7 +79,7 @@ void MainWindow::notePressed(Synth::Note const chosen) {
     if (std::abs(difference) <= confidence) {
         this->ui->statusbar->showMessage(QString("Correct: %1. Guess: %2. Off by %3").arg(this->playing).arg(chosen).arg(difference));
         this->kb->flicker_correct(this->playing.octave - 3, this->playing.note_class);
-        playRandomNote();
+        this->changeNote();
     } else {
         this->ui->statusbar->showMessage("Wrong");
     }

@@ -36,11 +36,15 @@ private slots:
 private:
     Synth::Note playing;
     void playRandomNote();
+    void changeNote();
     Ui::MainWindow *ui;
 
     QThread synthThread;
     Synth synth;
     Keyboard * kb;
+
+    QTimer noise_timer;
+    int noise_count;
 
     void keyPressEvent(QKeyEvent * const e) override;
     void keyReleaseEvent(QKeyEvent * const e) override;
