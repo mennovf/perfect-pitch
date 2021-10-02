@@ -52,6 +52,19 @@ public:
         }
     };
 
+    class Parameter {
+        using Float = double;
+
+    public:
+        Parameter(Float current, Float rate);
+        Float get() const;
+        void set(Float);
+        void advance(int ms);
+    private:
+        Float current;
+        Float target;
+        Float rate;
+    };
 
 
     class ADSREnvelope {
@@ -94,6 +107,7 @@ signals:
 protected:
     ADSREnvelope envelope;
     QAudioFormat format;
+    Parameter volume;
     double frequency;
     double phase_offsets[7];
     QMutex sample_buffer_mutex;
@@ -101,6 +115,7 @@ protected:
     QLibrary synthVST;
     QSharedPointer<QAudioOutput> outputDevice;
     QSharedPointer<QTimer> generationTimer;
+    QSharedPointer<QTimer> volumeTimer;
     QIODevice * rawOutputDevice;
 };
 

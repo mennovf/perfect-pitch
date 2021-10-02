@@ -4,9 +4,12 @@
 #include <limits>
 #include <QTimer>
 #include <stdlib.h>
+#include <algorithm>
+#include <cmath>
 
 Synth::Synth(QObject *parent) : QObject(parent),
     envelope{15, 13, 0.7, 0., 2},
+    volume{0.5, 1},
     frequency{0},
     synthVST{},
     outputDevice{nullptr},
@@ -36,6 +39,15 @@ void Synth::start() {
     this->generationTimer->setSingleShot(false);
     this->generationTimer->setInterval(1);
     this->generationTimer->start();
+
+    this->volumeTimer = decltype(this->volumeTimer)::create();
+    this->volumeTimer->setSingleShot(false);
+    this->volumeTimer->setInterval(1);
+    connect(this->volumeTimer.get(), &QTimer::timeout, this, [this](){
+        this->volume.advance(1);
+        this->outputDevice->setVolume(this->volume.get());
+    });
+    this->volumeTimer->start();
 
     int constexpr notify_interval_ms = 10;
     this->outputDevice->setNotifyInterval(notify_interval_ms);
@@ -166,5 +178,33 @@ std::ostream& operator<<(std::ostream& out, Synth::PitchClass c) {
 }
 
 void Synth::changeVolume(double v) {
-    this->outputDevice->setVolume(v);
+    this->volume.set(v);
+}
+
+Synth::Parameter::Parameter(Float current, Float rate):
+    current{current},
+    target{current},
+    rate{rate} {
+
+}
+
+Synth::Parameter::Float Synth::Parameter::get() const {
+    return this->current;
+}
+
+void Synth::Parameter::advance(int ms) {
+    Float const diff = ms * std::copysign(this->rate, this->target - this->current) / Float(1000);
+    Float lo = 0, hi = 0;
+    if (this->target > this->current) {
+        lo = this->current;
+        hi = this->target;
+    } else {
+        hi = this->current;
+        lo = this->target;
+    }
+    this->current = std::clamp(this->current + diff, lo, hi);
+}
+
+void Synth::Parameter::set(Float v) {
+    this->target = v;
 }
