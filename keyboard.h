@@ -18,6 +18,7 @@ signals:
 public slots:
     void change_confidence(int);
     void flicker_correct(int octave, Synth::PitchClass);
+    void set_correct_duration(double s);
 private:
     static constexpr qreal WIDTH_WHITE_KEY = 10;
     static constexpr qreal HEIGHT_WHITE_KEY = 50;

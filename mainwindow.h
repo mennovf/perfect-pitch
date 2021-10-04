@@ -43,6 +43,7 @@ private:
     Synth synth;
     Keyboard * kb;
 
+    QTimer delay_timer;
     QTimer noise_timer;
     int noise_count;
 

@@ -39,6 +39,14 @@ MainWindow::MainWindow(QWidget *parent)
         }
         this->playRandomNote();
     });
+
+    this->delay_timer.setInterval(0);
+    this->delay_timer.setSingleShot(true);
+    connect(this->ui->victoryDelay, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double v) {
+        this->delay_timer.setInterval(v * 1000);
+    });
+    connect(this->ui->victoryDelay, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this->kb, &Keyboard::set_correct_duration);
+    connect(&this->delay_timer, &QTimer::timeout, this, &MainWindow::changeNote);
 }
 
 void MainWindow::volumeChanged(int v) {
@@ -79,7 +87,7 @@ void MainWindow::notePressed(Synth::Note const chosen) {
     if (std::abs(difference) <= confidence) {
         this->ui->statusbar->showMessage(QString("Correct: %1. Guess: %2. Off by %3").arg(this->playing).arg(chosen).arg(difference));
         this->kb->flicker_correct(this->playing.octave - 3, this->playing.note_class);
-        this->changeNote();
+        this->delay_timer.start();
     } else {
         this->ui->statusbar->showMessage("Wrong");
     }

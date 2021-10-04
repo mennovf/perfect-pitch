@@ -247,3 +247,8 @@ bool Keyboard::event(QEvent * e) {
 void Keyboard::change_confidence(int cf) {
     this->confidence = cf;
 }
+
+void Keyboard::set_correct_duration(double s) {
+    int const msec = (s > 2) ? s*1000 : 2000;
+    this->disable_flicker.setInterval(msec);
+}
