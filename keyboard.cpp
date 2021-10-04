@@ -9,7 +9,12 @@ Keyboard::Keyboard(int octaves, QWidget * parent) : QLabel(parent),
   octaves{octaves},
   confidence{0}
 {
-    QImage background(OFFSET*octaves + STROKE_WIDTH, HEIGHT_WHITE_KEY + STROKE_WIDTH, QImage::Format_RGB32);
+    this->setScaledContents(false);
+    this->setMinimumSize(parent ? parent->size().width() : 900, 270);
+    this->setSizePolicy({QSizePolicy::Expanding, QSizePolicy::Expanding});
+    this->heightForWidth(true);
+
+    QImage background(this->total_local_width(), TOTAL_HEIGHT, QImage::Format_RGB32);
     this->setAttribute(Qt::WA_Hover, true);
 
     QPainter painter(&background);
@@ -73,7 +78,7 @@ Keyboard::Keyboard(int octaves, QWidget * parent) : QLabel(parent),
     this->layers[LayerId::CORRECT].composition_mode = QPainter::CompositionMode_Source;
     this->composite = pix;
 
-    this->compose();
+    this->compose(this->size());
 
 
     this->flickerState = false;
@@ -88,7 +93,7 @@ Keyboard::Keyboard(int octaves, QWidget * parent) : QLabel(parent),
         } else {
             this->layers[LayerId::CORRECT].mask = QRegion();
         }
-        this->compose();
+        this->compose(this->size());
 
         if (!this->disable_flicker.isActive()) {
             this->flickerTimer.stop();
@@ -106,12 +111,12 @@ void Keyboard::flicker_correct(int octave, Synth::PitchClass p) {
     this->flickerState = true;
     this->disable_flicker.start();
     this->flickerTimer.start();
-    this->compose();
+    this->compose(this->size());
 }
 
-void Keyboard::compose() {
+void Keyboard::compose(QSize const size) {
     QPainter p(&this->composite);
-    for (int i = 0; i < this->layers.size(); ++i) {
+    for (size_t i = 0; i < this->layers.size(); ++i) {
         auto const& layer = this->layers[i];
         p.setCompositionMode(layer.composition_mode);
         p.setClipRegion(layer.mask);
@@ -119,12 +124,9 @@ void Keyboard::compose() {
     }
     p.end();
 
-    const qreal TWIDTH = 300*this->octaves;
-    this->scale = TWIDTH / this->composite.width();
-
-    QPixmap px = this->composite.scaledToWidth(TWIDTH);
+    QPixmap px = this->composite.scaled(size, Qt::KeepAspectRatio);
+    this->scale = px.width() / size.width();
     this->setPixmap(px);
-    this->setFixedSize(px.size());
 }
 
 std::tuple<int, size_t> Keyboard::key_from_pos(QPoint const& p) const {
@@ -168,7 +170,7 @@ void Keyboard::hoverEnter(QHoverEvent * ) {
     };
 void Keyboard::hoverLeave(QHoverEvent * ) {
     this->layers[LayerId::HOVER].mask = QRegion();
-    this->compose();
+    this->compose(this->size());
 }
 
 
@@ -220,7 +222,7 @@ void Keyboard::hoverMove(QHoverEvent * ev) {
     int const gpci = octave * 12 + pci;
 
     this->layers[LayerId::HOVER].mask = this->range_region(gpci - this->confidence, gpci + this->confidence);
-    this->compose();
+    this->compose(this->size());
 }
 
 bool Keyboard::event(QEvent * e) {
@@ -251,4 +253,21 @@ void Keyboard::change_confidence(int cf) {
 void Keyboard::set_correct_duration(double s) {
     int const msec = (s > 2) ? s*1000 : 2000;
     this->disable_flicker.setInterval(msec);
+}
+
+void Keyboard::resizeEvent(QResizeEvent * const e) {
+    QLabel::resizeEvent(e);
+    this->compose(e->size());
+}
+
+QSize Keyboard::sizeHint() const {
+    return {this->width(), this->heightForWidth(this->width())};
+}
+int Keyboard::heightForWidth(int w) const {
+    int const h =  qRound(w * TOTAL_HEIGHT / total_local_width());
+    return h;
+}
+
+int Keyboard::total_local_width() const {
+    return this->octaves * Keyboard::OFFSET + STROKE_WIDTH;
 }

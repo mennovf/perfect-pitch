@@ -18,11 +18,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     this->synth.start();
 
-    this->kb = new Keyboard(3);
+    auto * const vlayout =  static_cast<QVBoxLayout*>(this->ui->centralwidget->layout());
+    this->kb = new Keyboard(3, this);
     connect(this->kb, &Keyboard::pressed, this, [this](int octave, Synth::PitchClass note_class) {
         this->notePressed({octave + 3, note_class});
     });
-    this->ui->keyboards->addWidget(kb);
+    vlayout->setStretch(0, 1);
+    vlayout->addWidget(kb, 4);
 
     QObject::connect(this->ui->confidence, QOverload<int>::of(&QSpinBox::valueChanged), kb, &Keyboard::change_confidence);
 
