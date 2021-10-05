@@ -5,6 +5,8 @@
 #include <QPainter>
 #include <QTimer>
 #include <array>
+#include <optional>
+#include <QHoverEvent>
 #include "synth.h"
 
 class Keyboard : public QLabel
@@ -67,6 +69,7 @@ private:
 
     bool flickerState;
     QTimer flickerTimer;
+    std::optional<QHoverEvent> last_hover_event;
 
     std::tuple<int, Synth::PitchClass> correct;
     QTimer disable_flicker;

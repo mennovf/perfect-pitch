@@ -49,6 +49,7 @@ private:
 
     void keyPressEvent(QKeyEvent * const e) override;
     void keyReleaseEvent(QKeyEvent * const e) override;
+    void wheelEvent(QWheelEvent * const) override;
     bool MainWindow::eventFilter(QObject *obj, QEvent *event) override;
 };
 #endif // MAINWINDOW_H

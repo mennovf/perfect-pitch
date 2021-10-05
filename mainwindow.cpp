@@ -150,3 +150,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
     return result;
 }
+
+void MainWindow::wheelEvent(QWheelEvent * const e) {
+    int const delta = e->angleDelta().y() / 120;
+    this->ui->confidence->setValue(this->ui->confidence->value() + delta);
+}
