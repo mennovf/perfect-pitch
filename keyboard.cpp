@@ -125,13 +125,15 @@ void Keyboard::compose(QSize const size) {
     p.end();
 
     QPixmap px = this->composite.scaled(size, Qt::KeepAspectRatio);
-    this->scale = px.width() / size.width();
+    this->scale = static_cast<qreal>(px.width()) / this->total_local_width();
     this->setPixmap(px);
 }
 
 std::tuple<int, size_t> Keyboard::key_from_pos(QPoint const& p) const {
+    qreal const yoffset = (this->size().height() - this->pixmap(Qt::ReturnByValueConstant{}).size().height()) / 2;
+    qreal const y = (p.y() - yoffset) / this->scale;
+
     qreal const xt = p.x() / this->scale;
-    qreal const y = p.y() / this->scale;
     int const octave = xt / OFFSET;
     qreal const x = xt - octave*OFFSET;
 
@@ -158,12 +160,14 @@ std::tuple<int, size_t> Keyboard::key_from_pos(QPoint const& p) const {
             return {octave, note_class};
         }
     }
-    return {0, 0};
+    return {-1, 0};
 }
 
 void Keyboard::mouseReleaseEvent(QMouseEvent *ev) {
     auto const& [octave, pitch_class] = this->key_from_pos(ev->pos());
-    emit pressed(octave, static_cast<Synth::PitchClass>(pitch_class));
+    if (octave != -1) {
+        emit pressed(octave, static_cast<Synth::PitchClass>(pitch_class));
+    }
 }
 
 void Keyboard::hoverEnter(QHoverEvent * e) {
@@ -218,9 +222,13 @@ QRegion Keyboard::range_region(int low, int high) const {
 }
 
 void Keyboard::hoverMove(QHoverEvent * ev) {
-    auto const& t = this->key_from_pos(ev->pos());
-    int const octave = std::get<0>(t);
-    auto const pitch_class = std::get<1>(t);
+    auto const& [octave, pitch_class] = this->key_from_pos(ev->pos());
+
+    if (octave == -1) {
+        this->hoverLeave(ev);
+        return;
+    }
+
     int const pci = static_cast<int>(pitch_class);
     int const gpci = octave * 12 + pci;
 
@@ -277,4 +285,8 @@ int Keyboard::heightForWidth(int w) const {
 
 int Keyboard::total_local_width() const {
     return this->octaves * Keyboard::OFFSET + STROKE_WIDTH;
+}
+
+int Keyboard::aspect_ratio() const {
+    return TOTAL_HEIGHT / total_local_width();
 }

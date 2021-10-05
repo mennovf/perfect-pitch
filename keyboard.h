@@ -37,6 +37,7 @@ private:
     qreal scale;
     int octaves;
 
+    int aspect_ratio() const;
     int total_local_width() const;
 
     std::array<QRect, 12> key_rects;
