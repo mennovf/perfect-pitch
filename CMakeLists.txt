@@ -46,6 +46,4 @@ else()
   )
 endif()
 
-add_subdirectory(VST3_SDK)
-
 target_link_libraries(perfect-pitch PRIVATE Qt5::Widgets Qt5::Multimedia Qt5::Core)
